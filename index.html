@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Latex-Wolframalpha-IPython Matrix Format Converter</title>
+</head>
+<body>
+	<h1>Latex-Wolframalpha-IPython Matrix Format Converter</h1>
+	<p>Latex:</p>
+	<textarea id="latex" rows="10" cols="100" placeholder="1 & 1 & 0 & 0 & 2\\
+0 & 0 & 0 & \frac{1}{4} & -3"></textarea>
+	<p>Wolframalpha:</p>
+	<textarea id="wolfram" rows="10" cols="100" placeholder="{{1 , 1 , 0 , 0 , 2}, {0 , 0 , 0 , 1/4 , -3}}"></textarea>
+	<p>IPython Array:</p>
+	<textarea id="ipython" rows="10" cols="100" placeholder="[[1 , 1 , 0 , 0 , 2], [0 , 0 , 0 , 1/4 , -3]]"></textarea>
+	<script src="jquery-3.2.1.min.js"></script>
+	<script type="text/javascript">
+		// From Latex to ___
+		var latex_wolfram = function(txt) {
+			if (txt.trim()=="")
+				return ""
+			var result = "";
+			var str_arr = txt.split("\n");
+			for (var i = 0; i < str_arr.length; i++) {
+				str_arr[i] = str_arr[i].trim().replace("\\\\","").replace(/&/g, ",");
+				result += "{" + str_arr[i] + "}";
+				if (i != str_arr.length-1)
+					result += ", " 
+			}
+			result = "{"+ result + "}";
+			return latexFractionNormalize(result);
+		}
+
+		var latex_ipython = function(txt) {
+			return wolfram_ipython(latex_wolfram(txt))
+		}
+
+		var latexFractionNormalize = function(x) {
+			var re = /\\frac{([0-9]*)}{([0-9]*)}/g;
+			return x.replace(re , '$1/$2');
+		}
+
+		var normalFractionLatex = function(x) {
+			var re = /([0-9]*)\/([0-9]*)/g;
+			return x.replace(re , '\\frac{$1}{$2}');	
+		}
+
+		// From Wolframalpha to ___
+		var wolfram_latex = function(txt) {
+			var result = "";
+			var str_arr = txt.split("}, {");
+			for (var i = 0; i < str_arr.length; i++) {
+				str_arr[i] = str_arr[i].trim().replace("{{","").replace("}}","").replace(/,/g, "&");
+				result += str_arr[i]
+				if (i != str_arr.length-1)
+					result += "\\\\\n" 
+			}
+			return normalFractionLatex(result);
+		}
+
+		var wolfram_ipython = function(txt) {
+			return txt.replace(/\{/g, "[").replace(/\}/g, "]")
+		}
+
+		// From IPython to ___
+		var ipython_wolfram = function(txt) {
+			return txt.replace(/\[/g, "{").replace(/\]/g, "}")
+		}
+
+		var ipython_latex = function(txt) {
+			return wolfram_latex(ipython_wolfram(txt))
+		}		
+
+		// Bind
+		$("#latex").bind('input propertychange', function(){
+			$("#wolfram").val( latex_wolfram( $("#latex").val() ) );
+			$("#ipython").val( latex_ipython( $("#latex").val() ) );
+		})
+
+		$("#wolfram").bind('input propertychange', function() {
+			$("#latex").val( wolfram_latex( $("#wolfram").val() ) );
+			$("#ipython").val( wolfram_ipython( $("#wolfram").val() ) );
+		})
+
+		$("#ipython").bind('input propertychange', function() {
+			$("#latex").val( ipython_latex( $("#ipython").val() ) );
+			$("#wolfram").val( ipython_wolfram( $("#ipython").val() ) );
+		})		
+	</script>
+</body>
+</html>
